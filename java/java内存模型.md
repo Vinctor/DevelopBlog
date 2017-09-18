@@ -29,6 +29,7 @@ java开发中经常提及的，JVM内存模型中最大的一块，它的唯一�
 ![老年代，新生代](http://upload-images.jianshu.io/upload_images/1583231-ded365aecf740b69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/800)
 
 先介绍一下两种GC类型：
+
 ```新生代GC（Minor GC）```：指发生在新生代的垃圾回收，因为java中大多数的java对象存活时间都不会很长，具备```朝生夕灭```的特点，所以```Minor GC```的回收速度特别快，也特别频繁。
 
 ```老年代GC（Major GC/Full GC）```：指发生带老年代的GC，大多数情况下会伴随发生至少一次的新生代GC（Minor GC），由于使用不同的垃圾回收算法，故而回收速度非常慢。
