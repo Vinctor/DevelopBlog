@@ -1,3 +1,5 @@
+>github上的地址：[DevelopBlog](https://github.com/Vinctor/DevelopBlog)
+
 与C语言不同，Java内存（堆内存）的回收由JVM垃圾收集器自动完成，不需要程序开发者手动释放内存。
 
 从Java内存模型（[链接](http://www.jianshu.com/p/860c259c8aad)）一文中，我们知道，java中几乎所有的对象实例存储在堆内存中，故而堆内存是JVM垃圾回收的主要阵地。
