@@ -1,3 +1,5 @@
+>github上的地址：[DevelopBlog](https://github.com/Vinctor/DevelopBlog)
+
 # 概览
 java虚拟机(以下简称JVM)多种多样,其中都必须遵循《java虚拟机规范》的要求,本篇文章只讨论```hotspot```（SE7）.
 JVM在运行程序时,会把内存划分为几个不同的区域,以方便线程的切换,GC,内存的高效利用等,java内存模型示意图如下:
