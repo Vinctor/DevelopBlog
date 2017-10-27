@@ -2,9 +2,9 @@
 
 # 概览
 java虚拟机(以下简称JVM)多种多样,其中都必须遵循《java虚拟机规范》的要求,本篇文章只讨论```hotspot```（SE7）.
-JVM在运行程序时,会把内存划分为几个不同的区域,以方便线程的切换,GC,内存的高效利用等,java内存模型示意图如下:
+JVM在运行程序时,会把内存划分为几个不同的区域,以方便线程的切换,GC,内存的高效利用等,java运行时数据区域示意图如下:
 
-![内存模型示意图.png](http://upload-images.jianshu.io/upload_images/1583231-2baf95bd2f9e03ca.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/500)
+![运行时数据区域示意图.png](http://upload-images.jianshu.io/upload_images/1583231-2baf95bd2f9e03ca.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/500)
 >其中```方法区```和```堆```为线程共享的区域
 
 ## 程序计数器
@@ -24,7 +24,7 @@ JVM执行某一方法时，加载```.class```文件之后,JVM的字节码解释�
 与```虚拟机栈```类似，区别在于它用来在虚拟机执行Native方法时使用
 
 ## 堆
-java开发中经常提及的，JVM内存模型中最大的一块，它的唯一作用就是存放实例化后的对象以及数组。同时也是```GC```的主要区域。虚拟机栈中存储了堆中对象的指针地址。
+java开发中经常提及的，JVM运行时数据区域中最大的一块，它的唯一作用就是存放实例化后的对象以及数组。同时也是```GC```的主要区域。虚拟机栈中存储了堆中对象的指针地址。
 ```GC```垃圾回收采用分代的思想来管理内存，在内存回收的角度来看，堆分为```老年代```和```新生代```。
 新生代是指新创建的对象，老年代是指存活时间比较长，经过多轮GC任然存活的对象。
 ![老年代，新生代](http://upload-images.jianshu.io/upload_images/1583231-ded365aecf740b69.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/800)
@@ -71,5 +71,6 @@ GC对此部分的回收主要集中在对常量池的回收以及类型的卸载
 常量池是方法区的一部分，用于存放由```javac```编译时生成的```.class```文件中的常量（例如：包名，类名，方法名，字段名，String字符串等,如下图）。
 
 ![class文件中字节码常量类型](http://upload-images.jianshu.io/upload_images/1583231-3ce64ddf3c5778ca.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/800)
+
 
 著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
