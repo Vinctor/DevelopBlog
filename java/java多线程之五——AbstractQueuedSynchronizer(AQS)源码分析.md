@@ -341,6 +341,8 @@ static void selfInterrupt() {
                 if (p == head) {
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {   // tryAcquireShared大于等于0，允许获取锁
+                       // 获取成功，需要将当前节点设置为AQS队列中的第一个节点
+                       // 这是AQS的规则，队列的头节点表示正在获取锁的节点
                        // 下面讲解
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
@@ -371,30 +373,28 @@ private void setHeadAndPropagate(Node node, int propagate) {
         Node h = head; 
         //将当前节点设置为head
         setHead(node);
-        // propagate是tryAcquireShared返回的值
-        // 并检查当前节点的后继节点为空或者后继节点的nextWaiter是否为SHARED
-        // 进而进行share传递， doReleaseShared
+        // propagate是tryAcquireShared返回的值 ，可以理解为Semaphore，是否还允许其他并发
         if (propagate > 0 || h == null || h.waitStatus < 0 ||
             (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
+            // 并检查当前节点的后继节点为空或者后继节点的nextWaiter是否为SHARED，表明后继节点需要共享传递
             if (s == null || s.isShared())
-                doReleaseShared();
+                doReleaseShared();  // 进行share传递， doReleaseShared
         }
     }
 ````
-可以看到这里与独占式的区别在于，进行了设置head之后，又进行了share传递，传递给下一个nextWaiter属性同样为SHAREED的节点
+可以看到这里与独占式的做了相似的事情，都进行了设置head之后，区别是共享式获取同步状态又进行了share传递，传递给下一个nextWaiter属性同样为SHAREED的节点，我们看一下doReleaseShared方法
 
 ####  doReleaseShared
 
 ```
 private void doReleaseShared() {
  /*
-         * 确保释放的传播性, 即使在并发情况下，多个线程在获取、释放。
-         * 如果需要唤醒，则通常尝试头节点的unparkSuccessor 动作。
-         * 但是如果他不符合唤醒的条件，为了确保能正确release，那么则把头节点的waitState设置为为PROPAGATE
-         * 此外，在执行该行为时，为了以防万一有新
-         * 节点的加入我们的行为必须在循环中，而且如果在修改状态中，如果修改失败，那么
-         * 也需要重新尝试修改。
+         * 即使在并发，多个线程在获取、释放的情况下，确保释放的传播性,
+         * 如果当前节点标记为SIGNAL（表示后继节点需要唤醒，按理说应该在当前节点释放的时候唤醒，但是此处是共享模式，故立即唤醒），则通常尝试头节点的unparkSuccessor 动作。
+         * 但是如果他不符合唤醒的条件，为了确保能正确release，那么则把head的waitState设置为为PROPAGATE
+         * 此外，在执行该代码时，为了以防万一有新
+         * 节点的加入，或者我们CAS修改失败，所以我们的更新需要在循环中，不断尝试。
          */
         for (;;) {
             Node h = head;
@@ -402,12 +402,12 @@ private void doReleaseShared() {
                 int ws = h.waitStatus;
                 if (ws == Node.SIGNAL) {
                     if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
-                        continue;            // loop to recheck cases
+                        continue;            // 失败了就继续loop  
                     unparkSuccessor(h);
                 }
                 else if (ws == 0 &&
                          !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
-                    continue;                // loop on failed CAS
+                    continue;                // 失败了就继续loop  
             }
             if (h == head)                   // loop if head changed
                 break;
@@ -415,23 +415,15 @@ private void doReleaseShared() {
     }
 ```
 
-为什么这里要把waitState状态修改为Node.PROPAGATE？
 
-可以想象一下在什么情况下节点的状态会被修改为0,。
-线程1调用doReleaseShared的方法释放头节点，此时头节点的状态被设置为0，compareAndSetWaitStatus(h, Node.SIGNAL, 0)
-然后unparkSuccessor(h);   AQS的头节点则被唤醒重试尝试出队。注意：此时的头节点状态为0！！
- 线程2调用且成功进入到doReleaseShared方法，此时获取头节点状态为0（新的头节点还未被setHead），既然能进入到这里，总不能释放失败吧？
-然后则把头节点由0修改为Node.PROPAGATE,这样我们在关注下setHeadAndPropagate方法
-````
- if (propagate > 0 || h == null || h.waitStatus < 0) {
-            Node s = node.next;
-             if (s == null || s.isShared())
-                         doReleaseShared();
- }
-````
- 可以看到这时候h.waitStatus是小于0的。则保证了并发情况下线程2的释放成功！
+这里最重要的是要多线程环境中理解doReleaseShared，一个线程A执行doReleaseShared，然后unparkSuccessor，线程B唤醒执行，这时候被唤醒的线程B运行，重新请求获取同步状态，修改head节点，唤醒线程C，然后依次唤醒D、E、F……每个节点在自己唤醒的同时，也唤醒了后面的节点，设置为head，这样就达到了共享模式。
 
->可以看到 独占式与共享式的差别就是共享的传递
+
+注意h == head，我们看到上面有注释说```Additionally, we must loop in case a new node is added while we are doing this.```为了避免在执行到这里的时候。如果有两个新的节点添加到队列中来，一个节点A唤醒B之后，B恰好setHead了，此时head是B节点。此时A之前获得的head并不是新的head了，故需要继续循环，以尽可能保证成功性。
+
+>可以看到 独占式与共享式的差别就是共享的传递：
+独占模式唤醒头节点，头节点释放之后，后继节点唤醒
+共享模式唤醒全部节点。
 
 ### 共享式释放同步状态
 源码不贴了，调用的是上述的doReleaseShared()
