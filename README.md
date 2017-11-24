@@ -18,5 +18,5 @@
 2.  ![java多线程之二——Synchronized](java/java多线程之二——Synchronized.md) 
 3.  ![java多线程之三——volatile](java/java多线程之三——volatile.md) 
 4.  ![java多线程之四——LockSupport](java/java多线程之四——LockSupport.md) 
-5.  ![ava多线程之五——AbstractQueuedSynchronizer(AQS)源码分析](java/java多线程之五——AbstractQueuedSynchronizer(AQS)源码分析.md) 
+5.  ![java多线程之五——AbstractQueuedSynchronizer(AQS)源码分析](java/java多线程之五——AbstractQueuedSynchronizer(AQS)源码分析.md) 
 
